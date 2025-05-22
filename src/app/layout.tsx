@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SolanaWalletProvider from "@/components/SolanaWalletProvider";
 import ThemeProvider from "@/components/theme/ThemeProvider";
+import AuthProvider from "@/components/AuthProvider";
 import AppLayout from "@/components/layout/AppLayout";
 import "./globals.css";
 
@@ -29,11 +30,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <ThemeProvider>
-          <SolanaWalletProvider>
-            <AppLayout>
-              {children}
-            </AppLayout>
-          </SolanaWalletProvider>
+          <AuthProvider>
+            <SolanaWalletProvider>
+              <AppLayout>
+                {children}
+              </AppLayout>
+            </SolanaWalletProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
