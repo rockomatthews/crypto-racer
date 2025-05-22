@@ -5,7 +5,6 @@ import {
   ConnectionProvider,
   WalletProvider,
 } from '@solana/wallet-adapter-react';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
@@ -20,11 +19,6 @@ interface SolanaWalletProviderProps {
 }
 
 export default function SolanaWalletProvider({ children }: SolanaWalletProviderProps) {
-  // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'
-  const network = 
-    (process.env.NEXT_PUBLIC_SOLANA_NETWORK as WalletAdapterNetwork) || 
-    WalletAdapterNetwork.Devnet;
-
   // You can also provide a custom RPC endpoint
   const endpoint = process.env.NEXT_PUBLIC_SOLANA_RPC_HOST || 'https://api.devnet.solana.com';
 
@@ -35,7 +29,7 @@ export default function SolanaWalletProvider({ children }: SolanaWalletProviderP
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
     ],
-    [network]
+    [] // Empty dependency array as these adapters don't change
   );
 
   return (

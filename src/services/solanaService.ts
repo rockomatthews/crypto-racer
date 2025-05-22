@@ -6,7 +6,9 @@ import {
   LAMPORTS_PER_SOL,
   TransactionInstruction,
 } from '@solana/web3.js';
-import { MemoProgram } from '@solana/spl-memo';
+
+// Define MemoProgram programId since direct import isn't working
+const MEMO_PROGRAM_ID = new PublicKey('Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo');
 
 /**
  * Service to handle Solana blockchain interactions
@@ -65,7 +67,7 @@ class SolanaService {
         transaction.add(
           new TransactionInstruction({
             keys: [],
-            programId: MemoProgram.programId,
+            programId: MEMO_PROGRAM_ID,
             data: Buffer.from(metadata),
           })
         );
@@ -113,7 +115,7 @@ class SolanaService {
         transaction.add(
           new TransactionInstruction({
             keys: [],
-            programId: MemoProgram.programId,
+            programId: MEMO_PROGRAM_ID,
             data: Buffer.from(metadata),
           })
         );
