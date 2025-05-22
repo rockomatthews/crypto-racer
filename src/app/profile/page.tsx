@@ -26,19 +26,11 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import SportsScoreIcon from '@mui/icons-material/SportsScore';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import LinkIcon from '@mui/icons-material/Link';
 import { format } from 'date-fns';
 import { useSolana } from '@/hooks/useSolana';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-
-// Mock session data
-const mockSession = {
-  user: {
-    id: '123',
-    name: 'John Doe',
-    email: 'john@example.com',
-    iRacingId: 123456,
-  }
-};
+import { useSession, signOut } from "next-auth/react";
 
 // Mock data for user bets
 const mockBets = [
@@ -94,35 +86,24 @@ const mockBets = [
 ];
 
 export default function ProfilePage() {
-  const [session, setSession] = useState<typeof mockSession | null>(null);
-  const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
   const [bets, setBets] = useState(mockBets);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { connected, walletAddress } = useSolana();
-
-  useEffect(() => {
-    // Simulate auth loading
-    const loadSession = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setSession(mockSession);
-      setAuthStatus('authenticated');
-    };
-    
-    loadSession();
-  }, []);
+  const [isConnectingIRacing, setIsConnectingIRacing] = useState(false);
 
   useEffect(() => {
     // Redirect if not authenticated
-    if (authStatus === 'unauthenticated') {
+    if (status === 'unauthenticated') {
       router.push('/auth/signin');
     }
 
     // Fetch user bets
     const fetchBets = async () => {
-      if (authStatus !== 'authenticated') return;
+      if (status !== 'authenticated') return;
 
       setLoading(true);
       setError(null);
@@ -147,14 +128,30 @@ export default function ProfilePage() {
     };
     
     fetchBets();
-  }, [authStatus, router]);
+  }, [status, router]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
+  const handleConnectIRacing = async () => {
+    setIsConnectingIRacing(true);
+    try {
+      // This would redirect to iRacing OAuth in a real implementation
+      // For now, simulate the process with a delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      // After successful connection, we'd refresh the session
+      // For now, just show a message
+      alert("This would redirect to iRacing for authentication");
+      setIsConnectingIRacing(false);
+    } catch (error) {
+      console.error("Error connecting iRacing:", error);
+      setIsConnectingIRacing(false);
+    }
+  };
+
   // Loading state
-  if (authStatus === 'loading') {
+  if (status === 'loading') {
     return (
       <Container maxWidth="md">
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -218,11 +215,25 @@ export default function ProfilePage() {
                 {session.user?.name || 'User'}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                iRacing ID: {session.user?.iRacingId || 'Not connected'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
                 {session.user?.email || 'No email'}
               </Typography>
+              
+              {session.user?.iRacingId ? (
+                <Typography variant="body2" color="text.secondary">
+                  iRacing ID: {session.user.iRacingId}
+                </Typography>
+              ) : (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  color="primary"
+                  startIcon={<LinkIcon />}
+                  onClick={handleConnectIRacing}
+                  disabled={isConnectingIRacing}
+                >
+                  {isConnectingIRacing ? 'Connecting...' : 'Connect iRacing Account'}
+                </Button>
+              )}
             </Box>
             
             <Box sx={{ ml: 'auto', textAlign: 'right' }}>
@@ -239,6 +250,17 @@ export default function ProfilePage() {
               ) : (
                 <WalletMultiButton />
               )}
+              
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  color="error"
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                >
+                  Sign Out
+                </Button>
+              </Box>
             </Box>
           </Box>
         </Paper>

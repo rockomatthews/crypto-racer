@@ -1,125 +1,134 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Typography, 
-  Box, 
-  Container, 
-  Tabs, 
-  Tab, 
-  TextField, 
-  InputAdornment,
+import {
+  Typography,
+  Box,
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  CardActionArea,
+  CardMedia,
+  Chip,
   CircularProgress,
   Alert,
+  Button,
   Divider,
-  Chip,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent
+  Paper
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import RaceCard from '@/components/races/RaceCard';
-import { RaceStatus } from '@prisma/client';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { format, addHours } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
-// Mock data for now
-const mockRaces = [
+// Mock upcoming races data (in real app would come from API)
+const MOCK_RACES = [
   {
     id: '1',
     name: 'Daytona 500',
-    track: 'Daytona International Speedway',
-    category: 'Oval',
-    startTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-    status: 'UPCOMING' as RaceStatus,
-    participants: Array.from({ length: 40 }, (_, i) => ({
-      id: `driver-${i + 1}`,
-      name: `Driver ${i + 1}`,
-    })),
+    track: {
+      name: 'Daytona International Speedway',
+      location: 'Daytona Beach, FL',
+      logoUrl: '/tracks/daytona.jpg'
+    },
+    startTime: addHours(new Date(), 24),
+    category: 'Stock Car',
+    entryCount: 43,
+    distance: 500,
+    laps: 200,
+    betCount: 156
   },
   {
     id: '2',
-    name: 'Spa 24 Hours',
-    track: 'Circuit de Spa-Francorchamps',
-    category: 'Road',
-    startTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-    status: 'UPCOMING' as RaceStatus,
-    participants: Array.from({ length: 30 }, (_, i) => ({
-      id: `driver-${i + 100}`,
-      name: `Driver ${i + 100}`,
-    })),
+    name: 'Monaco Grand Prix',
+    track: {
+      name: 'Circuit de Monaco',
+      location: 'Monte Carlo, Monaco',
+      logoUrl: '/tracks/monaco.jpg'
+    },
+    startTime: addHours(new Date(), 48),
+    category: 'Open Wheel',
+    entryCount: 20,
+    distance: 260,
+    laps: 78,
+    betCount: 203
   },
   {
     id: '3',
-    name: 'Nürburgring Grand Prix',
-    track: 'Nürburgring',
-    category: 'Road',
-    startTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-    status: 'UPCOMING' as RaceStatus,
-    participants: Array.from({ length: 25 }, (_, i) => ({
-      id: `driver-${i + 200}`,
-      name: `Driver ${i + 200}`,
-    })),
+    name: 'Spa 24 Hours',
+    track: {
+      name: 'Circuit de Spa-Francorchamps',
+      location: 'Stavelot, Belgium',
+      logoUrl: '/tracks/spa.jpg'
+    },
+    startTime: addHours(new Date(), 72),
+    category: 'GT3',
+    entryCount: 60,
+    distance: 4000,
+    laps: 0, // Endurance race, no fixed lap count
+    betCount: 89
   },
   {
     id: '4',
-    name: 'Monaco Sprint',
-    track: 'Circuit de Monaco',
-    category: 'Road',
-    startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-    status: 'COMPLETED' as RaceStatus,
-    participants: Array.from({ length: 20 }, (_, i) => ({
-      id: `driver-${i + 300}`,
-      name: `Driver ${i + 300}`,
-      finishPosition: i,
-    })),
+    name: 'Nürburgring 4 Hour',
+    track: {
+      name: 'Nürburgring Nordschleife',
+      location: 'Nürburg, Germany',
+      logoUrl: '/tracks/nurburgring.jpg'
+    },
+    startTime: addHours(new Date(), 120),
+    category: 'GT3',
+    entryCount: 38,
+    distance: 0, // Timed race
+    laps: 0,
+    betCount: 42
   },
   {
     id: '5',
-    name: 'Indianapolis 500',
-    track: 'Indianapolis Motor Speedway',
-    category: 'Oval',
-    startTime: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-    status: 'LIVE' as RaceStatus,
-    participants: Array.from({ length: 33 }, (_, i) => ({
-      id: `driver-${i + 400}`,
-      name: `Driver ${i + 400}`,
-    })),
-  },
+    name: 'Talladega Superspeedway Cup Series',
+    track: {
+      name: 'Talladega Superspeedway',
+      location: 'Talladega, AL',
+      logoUrl: '/tracks/talladega.jpg'
+    },
+    startTime: addHours(new Date(), 96),
+    category: 'Stock Car',
+    entryCount: 40,
+    distance: 300,
+    laps: 160,
+    betCount: 112
+  }
 ];
 
-// Define race categories
-const categories = ['All', 'Road', 'Oval', 'Dirt Road', 'Dirt Oval'];
+// Placeholder track image URLs (would be actual track images in real app)
+const getTrackImageFallback = (trackName: string) => {
+  // Return a placeholder image with track name
+  return `https://placehold.co/600x400/222/fff?text=${encodeURIComponent(trackName)}`;
+};
 
 export default function RacesPage() {
-  const [activeTab, setActiveTab] = useState<RaceStatus | 'ALL'>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [category, setCategory] = useState('All');
-  const [loading, setLoading] = useState(false);
+  const [races, setRaces] = useState<typeof MOCK_RACES>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [races, setRaces] = useState(mockRaces);
+  const router = useRouter();
 
-  // In a real app, this would fetch from the API
   useEffect(() => {
     const fetchRaces = async () => {
       setLoading(true);
       setError(null);
       
       try {
-        // Mock API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Normally you would fetch from the API here
-        // const response = await fetch('/api/races');
-        // const data = await response.json();
-        // setRaces(data.races);
-        
-        // Using mock data for now
-        setRaces(mockRaces);
+        // In a real app, this would be an API call to your backend
+        // which would fetch data from the iRacing API
+        // For now, simulate a delay and use mock data
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setRaces(MOCK_RACES);
       } catch (err) {
         console.error('Error fetching races:', err);
-        setError('Failed to load races. Please try again later.');
+        setError('Failed to load upcoming races. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -128,171 +137,140 @@ export default function RacesPage() {
     fetchRaces();
   }, []);
 
-  // Handle tab change
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: RaceStatus | 'ALL') => {
-    setActiveTab(newValue);
+  const handleRaceClick = (raceId: string) => {
+    router.push(`/races/${raceId}`);
   };
 
-  // Handle search input change
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
-  };
-
-  // Handle category change
-  const handleCategoryChange = (event: SelectChangeEvent<string>) => {
-    setCategory(event.target.value);
-  };
-
-  // Filter races based on active tab, search query, and category
-  const filteredRaces = races.filter(race => {
-    // Filter by status
-    if (activeTab !== 'ALL' && race.status !== activeTab) {
-      return false;
-    }
-    
-    // Filter by search query
-    if (searchQuery && !race.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !race.track.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    
-    // Filter by category
-    if (category !== 'All' && race.category !== category) {
-      return false;
-    }
-    
-    return true;
-  });
+  // Sort races by start time (soonest first)
+  const sortedRaces = [...races].sort((a, b) => 
+    a.startTime.getTime() - b.startTime.getTime()
+  );
 
   return (
-    <Container maxWidth="xl">
+    <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          iRacing Events
-        </Typography>
-        
-        <Typography variant="body1" color="text.secondary" paragraph>
-          Browse upcoming, live, and completed races. Place bets on your favorite drivers.
-        </Typography>
-        
-        {/* Filters */}
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', md: 'row' }, 
-          gap: 2, 
-          alignItems: { xs: 'stretch', md: 'center' },
-          my: 3 
-        }}>
-          <TextField
-            placeholder="Search races or tracks..."
-            variant="outlined"
-            fullWidth
-            value={searchQuery}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Upcoming Races
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Browse upcoming iRacing events and place your bets
+          </Typography>
+        </Box>
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 4 }}>
+            {error}
+          </Alert>
+        ) : races.length === 0 ? (
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 4, 
+              textAlign: 'center',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2
             }}
-            sx={{ flexGrow: 1 }}
-          />
-          
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel id="category-select-label">Category</InputLabel>
-            <Select
-              labelId="category-select-label"
-              id="category-select"
-              value={category}
-              label="Category"
-              onChange={handleCategoryChange}
-              startAdornment={
-                <InputAdornment position="start">
-                  <FilterListIcon color="action" />
-                </InputAdornment>
-              }
-            >
-              {categories.map((cat) => (
-                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-        
-        {/* Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs 
-            value={activeTab} 
-            onChange={handleTabChange} 
-            aria-label="race status tabs"
-            variant="scrollable"
-            scrollButtons="auto"
           >
-            <Tab label="All Races" value="ALL" />
-            <Tab label="Upcoming" value="UPCOMING" />
-            <Tab label="Live" value="LIVE" />
-            <Tab label="Completed" value="COMPLETED" />
-          </Tabs>
-        </Box>
-        
-        {/* Results */}
-        <Box sx={{ mt: 4 }}>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress />
-            </Box>
-          ) : error ? (
-            <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>
-          ) : filteredRaces.length === 0 ? (
-            <Box sx={{ py: 6, textAlign: 'center' }}>
-              <Typography variant="body1" color="text.secondary">
-                No races found matching your criteria.
-              </Typography>
-            </Box>
-          ) : (
-            <>
-              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Showing {filteredRaces.length} races
-                </Typography>
-                {searchQuery && (
-                  <Chip 
-                    label={`Search: "${searchQuery}"`} 
-                    size="small" 
-                    onDelete={() => setSearchQuery('')} 
-                  />
-                )}
-                {category !== 'All' && (
-                  <Chip 
-                    label={`Category: ${category}`} 
-                    size="small" 
-                    onDelete={() => setCategory('All')} 
-                  />
-                )}
-              </Box>
-              
-              <Divider sx={{ mb: 4 }} />
-              
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { 
-                  xs: '1fr', 
-                  sm: 'repeat(2, 1fr)', 
-                  md: 'repeat(3, 1fr)', 
-                  lg: 'repeat(4, 1fr)' 
-                }, 
-                gap: 3 
-              }}>
-                {filteredRaces.map((race) => (
-                  <Box key={race.id}>
-                    <RaceCard race={race} />
-                  </Box>
-                ))}
-              </Box>
-            </>
-          )}
-        </Box>
+            <DirectionsCarIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              No upcoming races found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Check back later for new races to bet on
+            </Typography>
+          </Paper>
+        ) : (
+          <Grid container spacing={3}>
+            {sortedRaces.map((race) => (
+              <Grid item xs={12} sm={6} md={4} key={race.id}>
+                <Card 
+                  elevation={0}
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 3,
+                    }
+                  }}
+                >
+                  <CardActionArea 
+                    onClick={() => handleRaceClick(race.id)}
+                    sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
+                  >
+                    <CardMedia
+                      component="img"
+                      height="160"
+                      image={race.track.logoUrl || getTrackImageFallback(race.track.name)}
+                      alt={race.track.name}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = getTrackImageFallback(race.track.name);
+                      }}
+                    />
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Box sx={{ mb: 1 }}>
+                        <Chip 
+                          label={race.category} 
+                          size="small" 
+                          color="primary" 
+                          variant="outlined"
+                        />
+                      </Box>
+                      <Typography variant="h6" component="h2" gutterBottom>
+                        {race.name}
+                      </Typography>
+                      
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <LocationOnIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {race.track.name}
+                        </Typography>
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <CalendarTodayIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {format(race.startTime, 'PP')}
+                        </Typography>
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <AccessTimeIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {format(race.startTime, 'p')}
+                        </Typography>
+                      </Box>
+
+                      <Divider sx={{ my: 2 }} />
+                      
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {race.entryCount} Drivers
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {race.betCount} Bets
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
       </Box>
     </Container>
   );

@@ -17,6 +17,9 @@
     "NEXT_PUBLIC_SOLANA_NETWORK": "devnet",
     "NEXT_PUBLIC_SOLANA_RPC_HOST": "https://api.devnet.solana.com",
     "IRACING_USERNAME": "placeholder_username",
-    "IRACING_PASSWORD": "placeholder_password"
+    "IRACING_PASSWORD": "placeholder_password",
+    "GOOGLE_CLIENT_ID": "your_google_client_id",
+    "GOOGLE_CLIENT_SECRET": "your_google_client_secret",
+    "DATABASE_URL": "postgres://default:random_password@postgres-db-hostname:5432/verceldb"
   }
 } 

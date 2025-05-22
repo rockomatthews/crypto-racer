@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import { iRacingService } from "@/services/iRacingService";
@@ -9,6 +10,10 @@ const prisma = new PrismaClient();
 const handler = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "placeholder-client-id",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder-client-secret",
+    }),
     CredentialsProvider({
       id: "iracing",
       name: "iRacing",
@@ -68,17 +73,39 @@ const handler = NextAuth({
     }),
   ],
   callbacks: {
-    jwt: async ({ token, user }) => {
+    // Link accounts if user signs in with different providers
+    signIn: async ({ user, account, profile }) => {
+      if (account?.provider === 'google') {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email as string },
+        });
+        
+        if (existingUser && existingUser.iRacingId) {
+          // User already exists with iRacing ID
+          user.iRacingId = existingUser.iRacingId;
+        }
+      }
+      return true;
+    },
+    jwt: async ({ token, user, account }) => {
       if (user) {
         token.id = user.id;
         token.iRacingId = user.iRacingId;
       }
+      
+      if (account?.provider === 'google') {
+        token.provider = 'google';
+      } else if (account?.provider === 'iracing') {
+        token.provider = 'iracing';
+      }
+      
       return token;
     },
     session: async ({ session, token }) => {
       if (token) {
         session.user.id = token.id as string;
-        session.user.iRacingId = token.iRacingId as number;
+        session.user.iRacingId = token.iRacingId as number | null;
+        session.user.provider = token.provider as string;
       }
       return session;
     },
