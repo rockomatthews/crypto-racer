@@ -1,0 +1,92 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id            String   @id @default(cuid())
+    email         String   @unique
+    name          String?
+    iRacingId     Int?     @unique
+    walletAddress String?  @unique
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    bets          Bet[]
+}
+
+model Race {
+    id           String     @id @default(cuid())
+    subsessionId Int        @unique // iRacing subsession ID
+    name         String
+    track        String
+    category     String // Road, Oval, Dirt Road, Dirt Oval
+    startTime    DateTime
+    endTime      DateTime?
+    status       RaceStatus @default(UPCOMING)
+    participants Driver[]
+    bets         Bet[]
+    createdAt    DateTime   @default(now())
+    updatedAt    DateTime   @updatedAt
+}
+
+model Driver {
+    id             String       @id @default(cuid())
+    iRacingId      Int
+    name           String
+    carNumber      String?
+    teamName       String?
+    finishPosition Int?
+    status         DriverStatus @default(REGISTERED)
+    race           Race         @relation(fields: [raceId], references: [id])
+    raceId         String
+    betsOn         Bet[]        @relation("BetsOnDriver")
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+
+    @@unique([iRacingId, raceId])
+}
+
+model Bet {
+    id                String    @id @default(cuid())
+    amount            Float // In SOL
+    odds              Float // Multiplier for winnings
+    status            BetStatus @default(PENDING)
+    txSignature       String? // Solana transaction signature
+    user              User      @relation(fields: [userId], references: [id])
+    userId            String
+    race              Race      @relation(fields: [raceId], references: [id])
+    raceId            String
+    driver            Driver    @relation("BetsOnDriver", fields: [driverId], references: [id])
+    driverId          String
+    payoutTxSignature String?
+    createdAt         DateTime  @default(now())
+    updatedAt         DateTime  @updatedAt
+}
+
+enum RaceStatus {
+    UPCOMING
+    LIVE
+    COMPLETED
+    CANCELLED
+}
+
+enum DriverStatus {
+    REGISTERED
+    RACING
+    FINISHED
+    DNF
+    DSQ
+}
+
+enum BetStatus {
+    PENDING
+    CONFIRMED
+    WON
+    LOST
+    REFUNDED
+    PAID_OUT
+}

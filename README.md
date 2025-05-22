@@ -1,4 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# iRacing Crypto Bets
+
+A full-stack application for placing cryptocurrency bets on iRacing events using Next.js, Prisma, and Solana blockchain.
+
+## Features
+
+- Browse upcoming races and view their details
+- Place bets on race participants using Solana cryptocurrency
+- Connect your iRacing account to view personalized race data
+- Track your betting history and winnings
+- Automated settlement of bets based on race results
+
+## Technology Stack
+
+- **Frontend**: Next.js 15, Material UI 7, TypeScript
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: PostgreSQL
+- **Authentication**: Next-Auth with iRacing OAuth
+- **Blockchain**: Solana Web3.js, Wallet Adapter
+
+## Setup Instructions
+
+### Prerequisites
+
+- Node.js (v20+)
+- PostgreSQL (v15+)
+- Solana CLI tools (optional)
+
+### Database Setup
+
+1. Install PostgreSQL if you don't have it already:
+   ```
+   # macOS (using Homebrew)
+   brew install postgresql
+   brew services start postgresql
+
+   # Ubuntu/Debian
+   sudo apt update
+   sudo apt install postgresql postgresql-contrib
+   sudo systemctl start postgresql
+   ```
+
+2. Create a database and user:
+   ```
+   # Connect to PostgreSQL
+   sudo -u postgres psql
+
+   # Create database and user (in psql)
+   CREATE DATABASE iracing_crypto_bets;
+   CREATE USER username WITH ENCRYPTED PASSWORD 'password';
+   GRANT ALL PRIVILEGES ON DATABASE iracing_crypto_bets TO username;
+
+   # Exit psql
+   \q
+   ```
+
+3. Update the `.env` file with your PostgreSQL credentials:
+   ```
+   DATABASE_URL="postgresql://username:password@localhost:5432/iracing_crypto_bets"
+   ```
+
+### Application Setup
+
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Push the database schema:
+   ```
+   npx prisma db push
+   ```
+4. Generate Prisma client:
+   ```
+   npx prisma generate
+   ```
+5. Start the development server:
+   ```
+   npm run dev
+   ```
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/iracing_crypto_bets"
+
+# Solana
+NEXT_PUBLIC_SOLANA_NETWORK="devnet"
+NEXT_PUBLIC_SOLANA_RPC_HOST="https://api.devnet.solana.com"
+
+# iRacing API
+IRACING_USERNAME="your_iracing_username"
+IRACING_PASSWORD="your_iracing_password"
+
+# NextAuth.js
+NEXTAUTH_SECRET="random_secret_key_replace_this"
+NEXTAUTH_URL="http://localhost:3000"
+
+# App Settings
+NODE_ENV="development"
+```
 
 ## Getting Started
 
